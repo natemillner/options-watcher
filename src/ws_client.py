@@ -42,7 +42,7 @@ async def ws_connect():
             "filter": ["timesale"],
             "validOnly": True,
         }
-        logger.info("Connecting to Tradier WebSocket")
+        logger.info(f"Sending payload for {len(payload['symbols'])} tickers")
         await websocket.send(json.dumps(payload))
         logger.info("Connected to Tradier WebSocket")
         async for message in websocket:

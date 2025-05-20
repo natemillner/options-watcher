@@ -1,7 +1,7 @@
 import logging
 import os
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, create_engine
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, create_engine,BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 logger = logging.getLogger(__name__)
@@ -33,8 +33,9 @@ class Symbols(Base):
 
 class Trades(Base):
     __tablename__ = "trades"
-    symbol: Mapped[str] = mapped_column(ForeignKey("symbols.symbol"), primary_key=True)
-    time: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP(precision=6), primary_key=True)
+    trade_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(ForeignKey("symbols.symbol"), nullable=False, index=True)
+    time: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP(precision=6), nullable=False, index=True)
     bid: Mapped[float] = mapped_column(Float)
     ask: Mapped[float] = mapped_column(Float)
     trade_price: Mapped[float] = mapped_column(Float)
