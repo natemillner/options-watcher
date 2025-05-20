@@ -53,4 +53,4 @@ class Summary(Base):
 
 
 logger.info("Creating tables")
-# create_tables()
+create_tables()
