@@ -16,7 +16,7 @@ def create_tables() -> None:
     Create the database tables using sqlalchemy
     """
     engine = create_engine(
-        f"postgresql://{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_NAME')}"
+        f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_NAME')}"
     )
     Base.metadata.create_all(engine)
     engine.dispose()
