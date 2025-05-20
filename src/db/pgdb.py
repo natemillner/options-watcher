@@ -9,7 +9,7 @@ from src.tradier_stuff import parse_occ_symbol
 from .sql import INSERT_SYMBOL_SQL, INSERT_TRADE_SQL
 
 logger = logging.getLogger(__name__)
-DB_DSN = f"postgresql://{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_NAME')}"
+DB_DSN = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_NAME')}"
 
 pool = None
 
