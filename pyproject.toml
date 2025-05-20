@@ -1,0 +1,16 @@
+[project]
+name = "options-watcher"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncio>=3.4.3",
+    "asyncpg>=0.30.0",
+    "polars>=1.29.0",
+    "python-dotenv>=1.1.0",
+    "redis>=6.1.0",
+    "requests>=2.32.3",
+    "sqlalchemy>=2.0.40",
+    "websockets>=15.0.1",
+]
