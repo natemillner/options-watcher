@@ -6,9 +6,9 @@ services:
     container_name: postgres-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: mydb #for now , until database class ends
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -23,14 +23,14 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
   app:
-    image: nathanmillner/options_scraper:latest
-    container_name: options-scraper
+    image: nathanmillner/options-watcher:latest
+    container_name: options-watcher
     restart: unless-stopped
     environment:
       DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
       DB_PORT: 5432
       REDIS_HOST: redis
       REDIS_PORT: 6379

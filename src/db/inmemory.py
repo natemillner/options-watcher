@@ -10,7 +10,7 @@ db = None
 
 class InMemoryDB:
     def __init__(self, host: str, port: int, password: str, db: int):
-        self.redis = redis.Redis(host=host, port=port, db=db)
+        self.redis = redis.Redis(host=host, port=port, password=password, db=db)
 
     @classmethod
     async def create(
