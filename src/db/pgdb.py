@@ -29,8 +29,8 @@ async def insert_trade(trade: dict) -> None:
     """
     global pool
     async with pool.acquire() as conn:
-        async with conn.transaction():
-            try:
+        try:
+            async with conn.transaction():
                 await conn.execute(
                     INSERT_TRADE_SQL,
                     trade["symbol"],
@@ -41,11 +41,13 @@ async def insert_trade(trade: dict) -> None:
                     trade["size"],
                     trade["trade_type"],
                 )
-            except ForeignKeyViolationError:
-                logger.info(
-                    f"Foreign key violation for symbol {trade['symbol']}. Inserting symbol."
-                )
-                symbol_parsed = parse_occ_symbol(trade["symbol"])
+                return
+        except ForeignKeyViolationError:
+            logger.info(
+                f"Foreign key violation for symbol {trade['symbol']}. Inserting symbol."
+            )
+            symbol_parsed = parse_occ_symbol(trade["symbol"])
+            async with conn.transaction():
                 await conn.execute(
                     INSERT_SYMBOL_SQL,
                     symbol_parsed.get("symbol"),
@@ -54,7 +56,7 @@ async def insert_trade(trade: dict) -> None:
                     symbol_parsed.get("call_putt"),
                     symbol_parsed.get("strike"),
                 )
-                await conn.commit()
+            async with conn.transaction():
                 await conn.execute(
                     INSERT_TRADE_SQL,
                     trade["symbol"],
