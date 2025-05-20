@@ -54,6 +54,7 @@ async def insert_trade(trade: dict) -> None:
                     symbol_parsed.get("call_putt"),
                     symbol_parsed.get("strike"),
                 )
+                await conn.commit()
                 await conn.execute(
                     INSERT_TRADE_SQL,
                     trade["symbol"],
