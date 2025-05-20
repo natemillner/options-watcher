@@ -1,5 +1,5 @@
 import logging
-
+from datetime import datetime
 from src.db import get_db, insert_trade
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ async def handle_timesale(data: dict) -> None:
 
     await db.set(f"tradeprice:{data.get('symbol')}", trade_price)
     await db.set(f"tradeclass:{data.get('symbol')}", trade_type)
+    data['date'] = datetime.fromtimestamp(data.get("date"))
     data["trade_type"] = trade_type
     await insert_trade(data)
 
