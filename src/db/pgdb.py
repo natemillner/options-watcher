@@ -34,6 +34,7 @@ async def insert_trade(trade: dict) -> None:
                 await conn.execute(
                     INSERT_TRADE_SQL,
                     trade["symbol"],
+                    trade['seq'],
                     trade["date"],
                     trade["bid"],
                     trade["ask"],
@@ -60,6 +61,7 @@ async def insert_trade(trade: dict) -> None:
                 await conn.execute(
                     INSERT_TRADE_SQL,
                     trade["symbol"],
+                    trade['seq'],
                     trade["date"],
                     trade["bid"],
                     trade["ask"],

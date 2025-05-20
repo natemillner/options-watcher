@@ -34,7 +34,8 @@ class Symbols(Base):
 class Trades(Base):
     __tablename__ = "trades"
     symbol: Mapped[str] = mapped_column(ForeignKey("symbols.symbol"), primary_key=True)
-    time: Mapped[DateTime] = mapped_column(DateTime, primary_key=True)
+    sequence: Mapped[int] = mapped_column(int, primary_key=True)
+    time: Mapped[DateTime] = mapped_column(DateTime)
     bid: Mapped[float] = mapped_column(Float)
     ask: Mapped[float] = mapped_column(Float)
     trade_price: Mapped[float] = mapped_column(Float)
