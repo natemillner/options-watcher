@@ -24,4 +24,4 @@ jobs:
       with:
         context: .
         push: true
-        tags: nathanmillner/options_watcher:latest
+        tags: nathanmillner/options-watcher:latest
