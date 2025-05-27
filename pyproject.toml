@@ -1,12 +1,13 @@
 [project]
 name = "options-watcher"
-version = "0.1.3"
+version = "0.1.4"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "asyncio>=3.4.3",
     "asyncpg>=0.30.0",
+    "pandas-market-calendars>=5.1.0",
     "polars>=1.29.0",
     "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.1.0",

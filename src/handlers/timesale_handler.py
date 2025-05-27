@@ -37,12 +37,12 @@ async def handle_timesale(data: dict) -> None:
 
     await db.set(f"tradeprice:{data.get('symbol')}", trade_price)
     await db.set(f"tradeclass:{data.get('symbol')}", trade_type)
-    data['date'] = datetime.fromtimestamp(int(data.get("date"))/1000)
+    data["date"] = datetime.fromtimestamp(int(data.get("date")) / 1000)
     data["trade_type"] = trade_type
-    data['ask'] = float(data['ask'])
-    data['bid'] = float(data['bid'])
-    data['last'] = float(data['last'])
-    data['size'] = int(data['size'])
+    data["ask"] = float(data["ask"])
+    data["bid"] = float(data["bid"])
+    data["last"] = float(data["last"])
+    data["size"] = int(data["size"])
     await insert_trade(data)
 
 

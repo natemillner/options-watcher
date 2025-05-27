@@ -45,14 +45,31 @@ async def ws_connect():
         logger.info(f"Sending payload for {len(payload['symbols'])} tickers")
         await websocket.send(json.dumps(payload))
         logger.info("Connected to Tradier WebSocket")
-        async for message in websocket:
-            data = json.loads(message)
-            msg_type = data.get("type")
-            if msg_type == "timesale":
-                if (
-                    data.get("cancel", False) is False
-                    and data.get("correction", False) is False
-                ):
-                    asyncio.create_task(handle_timesale(data))
 
-        await asyncio.Future()  # Keep the connection open
+        async def watchdog():
+            try:
+                await asyncio.sleep(600)
+                logger.warning("No message for 10 minutes—closing WebSocket.")
+                await websocket.close()
+            except asyncio.CancelledError:
+                # expected when we reset the timer
+                return
+
+        watchdog_task = asyncio.create_task(watchdog())
+        try:
+            async for message in websocket:
+                watchdog_task.cancel()
+                data = json.loads(message)
+                msg_type = data.get("type")
+                if msg_type == "timesale":
+                    if (
+                        data.get("cancel", False) is False
+                        and data.get("correction", False) is False
+                    ):
+                        asyncio.create_task(handle_timesale(data))
+                watchdog_task = asyncio.create_task(watchdog())
+        except websockets.ConnectionClosed as e:
+            logger.error(f"WebSocket connection closed: {e}")
+        finally:
+            watchdog_task.cancel()
+            logger.info("WebSocket connection closed, exiting.")
