@@ -19,13 +19,23 @@ def main():
     nyse = mcal.get_calendar("NYSE")
     
     while True:
-        now = datetime.now()
-        now_ts = pd.Timestamp(now, tz="US/Eastern")
-        if nyse.open_at_time(now_ts):
+        now_ts = pd.Timestamp.now(tz="US/Eastern")
+        today = now_ts.date()
+
+        sched = nyse.schedule(
+            start_date=today,
+            end_date=today
+        )
+
+        is_open = False
+        if not sched.empty:
+            is_open = nyse.open_at_time(sched, now_ts)
+
+        if is_open:
             logger.info("Market is open, starting WebSocket connection.")
             break
         else:
-            logger.info("Market is closed, waiting for 5 minutes before retrying.")
+            logger.info("Market is closed, retrying in 5 minutes…")
             time.sleep(300)
 
     asyncio.run(ws_connect())
