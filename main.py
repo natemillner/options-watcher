@@ -25,7 +25,7 @@ def main():
         sched = nyse.schedule(
             start_date=today,
             end_date=today
-        )
+        ).tz_convert("US/Eastern")
 
         is_open = False
         if not sched.empty:
