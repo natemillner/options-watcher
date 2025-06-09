@@ -1,10 +1,10 @@
 import asyncio
 import logging
 import time
-from datetime import datetime
 import pandas_market_calendars as mcal
 from dotenv import load_dotenv
 import pandas as pd
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ from src.ws_client import ws_connect  # noqa: E402
 
 def main():
     nyse = mcal.get_calendar("NYSE")
-    
+
     while True:
         now_et = pd.Timestamp.now(tz="US/Eastern")
         today = now_et.date().strftime("%Y-%m-%d")

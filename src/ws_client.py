@@ -17,8 +17,23 @@ logger = logging.getLogger(__name__)
 TICKERS = [
     {
         "ticker": "SPY",
-        "expiration": (datetime.now() + timedelta(days=30)).date(),
+        "expiration": (datetime.now() + timedelta(days=8)).date(),
         "strike_range": 10,
+    },
+    {
+        "ticker": "QQQ",
+        "expiration": (datetime.now() + timedelta(days=8)).date(),
+        "strike_range": 10,
+    },
+    {
+        "ticker": "NVDA",
+        "expiration": (datetime.now() + timedelta(days=8)).date(),
+        "strike_range": 10,
+    },
+    {
+        "ticker": "RIOT",
+        "expiration": (datetime.now() + timedelta(days=8)).date(),
+        "strike_range": 4,
     }
 ]
 
