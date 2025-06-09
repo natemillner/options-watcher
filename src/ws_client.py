@@ -52,7 +52,7 @@ async def ws_connect():
                     get_price(ticker["ticker"]),
                 )
                 for ticker in TICKERS
-            ][0],
+            ],
             "sessionid": get_session_id(),
             "filter": ["timesale"],
             "validOnly": True,
