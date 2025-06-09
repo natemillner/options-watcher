@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import logging
 import websockets
 
+import itertools
+
 from .db import create_db, init_db_pool
 from .handlers import handle_timesale
 from .tradier_stuff import (
@@ -57,6 +59,8 @@ async def ws_connect():
             "filter": ["timesale"],
             "validOnly": True,
         }
+        payload["symbols"] = list(itertools.chain.from_iterable(payload["symbols"]))
+
         logger.info(f"Sending payload for {len(payload['symbols'])} tickers")
         await websocket.send(json.dumps(payload))
         logger.info("Connected to Tradier WebSocket")
