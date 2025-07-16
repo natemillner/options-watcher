@@ -36,6 +36,11 @@ TICKERS = [
         "ticker": "RIOT",
         "expiration": (datetime.now() + timedelta(days=8)).date(),
         "strike_range": 4,
+    },
+    {
+        "ticker":"CAVA",
+        "expiration": (datetime.now() + timedelta(days=12)).date(),
+        "strike_range": 5,
     }
 ]
 
