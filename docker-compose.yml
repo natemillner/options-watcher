@@ -1,22 +1,22 @@
 version: "3.9"
 
 services:
-  postgres:
-    image: postgres:16
-    container_name: postgres-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    healthcheck:
-      test: ["CMD-SHELL","pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      retries: 5
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+  # postgres:
+  #   image: postgres:16
+  #   container_name: postgres-db
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #   healthcheck:
+  #     test: ["CMD-SHELL","pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+  #     interval: 10s
+  #     retries: 5
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
   redis:
     image: redis:latest
     container_name: redis
@@ -31,11 +31,11 @@ services:
       interval: 10s
       retries: 5
   app:
-    image: nathanmillner/options-watcher:latest
+    image: options:local
     container_name: options-watcher
     restart: unless-stopped
     environment:
-      POSTGRES_HOST: postgres
+      POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_NAME: ${POSTGRES_DB}
@@ -46,8 +46,6 @@ services:
       TRADIER_API_KEY: ${TRADIER_API_KEY}
       TZ: ${TZ}
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
 volumes:

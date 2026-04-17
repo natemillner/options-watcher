@@ -84,25 +84,30 @@ def get_price(symbol: str) -> float:
     Returns:
         float: The price of the underlying asset.
     """
+    quote = get_quote(symbol)
+    return quote.get("last") if quote else None
+
+
+def get_quote(symbol: str, greeks: bool = False) -> dict | None:
+    """
+    Get the latest quote snapshot for a symbol.
+
+    Returns the raw quote payload from Tradier when available.
+    """
     headers = {
         "Authorization": f"Bearer {os.getenv('TRADIER_API_KEY')}",
         "Accept": "application/json",
     }
     params = {
         "symbols": symbol,
-        "greeks": "false",
+        "greeks": "true" if greeks else "false",
     }
-    logger.info(f"Getting price for {symbol} from Tradier API")
+    logger.info(f"Getting quote for {symbol} from Tradier API")
     response = requests.get(
         "https://api.tradier.com/v1/markets/quotes", headers=headers, params=params
     )
     if response.status_code == 200:
-        response = response.json().get("quotes", {}).get("quote", {})
-        if response:
-            return response.get("last")
-        else:
-            return None
-    else:
-        raise Exception(
-            f"Failed to get price: {response.status_code} - {response.text}"
-        )
+        quote = response.json().get("quotes", {}).get("quote", {})
+        return quote or None
+
+    raise Exception(f"Failed to get quote: {response.status_code} - {response.text}")

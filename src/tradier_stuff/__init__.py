@@ -1,6 +1,6 @@
 from .auth import get_session_id
 from .helpers import parse_occ_symbol
-from .mdata import filter_options_symbols, get_options_symbols, get_price
+from .mdata import filter_options_symbols, get_options_symbols, get_price, get_quote
 
 __all__ = [
     "get_session_id",
@@ -8,4 +8,5 @@ __all__ = [
     "filter_options_symbols",
     "parse_occ_symbol",
     "get_price",
+    "get_quote",
 ]
