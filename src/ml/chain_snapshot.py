@@ -7,6 +7,8 @@ from src.tradier_stuff import get_quote, parse_occ_symbol
 
 logger = logging.getLogger(__name__)
 
+UNDERLYING_QUOTE_TTL_SECONDS = 20 * 60
+
 _snapshot_queue: asyncio.Queue[dict] | None = None
 _snapshot_workers: list[asyncio.Task] = []
 _latest_requested_minute: dict[str, datetime] = {}
@@ -156,7 +158,7 @@ async def _resolve_underlying_price(root: str, option_quote: dict) -> float | No
         "last": float(root_quote.get("last") or root_quote.get("close") or 0.0),
         "updated_at": datetime.now(UTC).isoformat(),
     }
-    await db.set_json(f"quote:{root}", normalized)
+    await db.set_json(f"quote:{root}", normalized, ex=UNDERLYING_QUOTE_TTL_SECONDS)
     return normalized["last"] or None
 
 

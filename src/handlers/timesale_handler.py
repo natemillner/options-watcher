@@ -7,6 +7,9 @@ from src.tradier_stuff import parse_occ_symbol
 logger = logging.getLogger(__name__)
 
 
+TRADE_STATE_TTL_SECONDS = 20 * 60
+
+
 async def handle_timesale(data: dict) -> None:
     """
     Handle the trade data received from the Tradier API.
@@ -47,8 +50,8 @@ async def handle_timesale(data: dict) -> None:
         else:
             trade_type = "unknown"
 
-    await db.set(f"tradeprice:{symbol}", trade_price)
-    await db.set(f"tradeclass:{symbol}", trade_type)
+    await db.set(f"tradeprice:{symbol}", trade_price, ex=TRADE_STATE_TTL_SECONDS)
+    await db.set(f"tradeclass:{symbol}", trade_type, ex=TRADE_STATE_TTL_SECONDS)
     data["date"] = datetime.fromtimestamp(int(data.get("date")) / 1000, UTC)
     data["trade_type"] = trade_type
     data["ask"] = float(data["ask"])

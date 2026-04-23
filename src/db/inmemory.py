@@ -29,19 +29,22 @@ class InMemoryDB:
         logger.info("Flushed Redis database.")
         return self
 
-    async def set(self, key: str, value: str) -> None:
-        await self.redis.set(key, value)
+    async def set(self, key: str, value: str, ex: int | None = None) -> None:
+        await self.redis.set(key, value, ex=ex)
 
     async def get(self, key: str) -> str:
         v = await self.redis.get(key)
         return v.decode("utf-8") if v else None
 
-    async def set_json(self, key: str, value: dict) -> None:
-        await self.redis.set(key, json.dumps(value))
+    async def set_json(self, key: str, value: dict, ex: int | None = None) -> None:
+        await self.redis.set(key, json.dumps(value), ex=ex)
 
     async def get_json(self, key: str) -> dict | None:
         payload = await self.get(key)
         return json.loads(payload) if payload else None
+
+    async def flush(self) -> None:
+        await self.redis.flushdb()
 
 
 async def create_db() -> None:

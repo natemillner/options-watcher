@@ -1,12 +1,14 @@
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 import logging
 import websockets
 
 import itertools
+import pandas as pd
+import pandas_market_calendars as mcal
 
-from .db import create_db, init_db_pool
+from .db import create_db, get_db, init_db_pool
 from .handlers import handle_quote, handle_timesale
 from .ml import initialize_chain_snapshot_runtime, initialize_inference_runtime
 from .tradier_stuff import (
@@ -83,10 +85,24 @@ async def ws_connect():
             def _done_callback(done_task: asyncio.Task) -> None:
                 try:
                     done_task.result()
+                except asyncio.CancelledError:
+                    logger.debug("%s task cancelled", label)
                 except Exception:
                     logger.exception("Unhandled error in %s task", label)
 
             task.add_done_callback(_done_callback)
+
+        async def close_at_market_close() -> None:
+            close_delay_seconds = _seconds_until_market_close()
+            if close_delay_seconds is None:
+                return
+            try:
+                await asyncio.sleep(close_delay_seconds)
+                logger.info("Market close reached. Closing WebSocket and clearing Redis cache.")
+                await websocket.close()
+                await get_db().flush()
+            except asyncio.CancelledError:
+                return
 
         async def watchdog():
             try:
@@ -98,6 +114,7 @@ async def ws_connect():
                 return
 
         watchdog_task = asyncio.create_task(watchdog())
+        market_close_task = asyncio.create_task(close_at_market_close())
         try:
             async for message in websocket:
                 watchdog_task.cancel()
@@ -122,4 +139,20 @@ async def ws_connect():
             logger.error(f"WebSocket connection closed: {e}")
         finally:
             watchdog_task.cancel()
+            market_close_task.cancel()
             logger.info("WebSocket connection closed, exiting.")
+
+
+def _seconds_until_market_close() -> float | None:
+    nyse = mcal.get_calendar("NYSE")
+    now_et = pd.Timestamp.now(tz="US/Eastern")
+    today = now_et.date().strftime("%Y-%m-%d")
+    schedule = nyse.schedule(start_date=today, end_date=today)
+    if schedule.empty:
+        return None
+
+    market_close_utc = schedule.iloc[0]["market_close"]
+    if market_close_utc.tzinfo is None:
+        market_close_utc = market_close_utc.tz_localize("UTC")
+    close_delay = (market_close_utc.to_pydatetime() - datetime.now(UTC)).total_seconds()
+    return max(close_delay, 0.0)

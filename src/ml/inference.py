@@ -37,6 +37,8 @@ SUPPORTED_ROOTS = {"SPY", "QQQ", "NVDA"}
 MODELS_DIR = Path("models")
 ROLLING_WINDOW = timedelta(minutes=15)
 EVENT_GAP = timedelta(minutes=3)
+UNDERLYING_QUOTE_TTL_SECONDS = 20 * 60
+TRADE_QUEUE_MAXSIZE = 5000
 
 _trade_queue: asyncio.Queue[dict] | None = None
 _worker_tasks: list[asyncio.Task] = []
@@ -45,6 +47,7 @@ _models: dict[str, dict[str, object]] = {}
 _aggression_state: dict[str, deque[tuple[datetime, float, float]]] = defaultdict(deque)
 _pending_events: dict[tuple[str, str], dict] = {}
 _runtime_initialized = False
+_dropped_trade_inference = 0
 
 
 def _latest_model_path(root: str) -> Path | None:
@@ -72,7 +75,7 @@ async def initialize_inference_runtime(worker_count: int = 2) -> None:
         return
 
     _models = _load_models()
-    _trade_queue = asyncio.Queue(maxsize=20000)
+    _trade_queue = asyncio.Queue(maxsize=TRADE_QUEUE_MAXSIZE)
     _worker_tasks = [
         asyncio.create_task(_inference_worker(worker_id))
         for worker_id in range(worker_count)
@@ -83,6 +86,7 @@ async def initialize_inference_runtime(worker_count: int = 2) -> None:
 
 
 async def enqueue_trade_for_inference(trade: dict) -> None:
+    global _dropped_trade_inference
     if _trade_queue is None:
         logger.debug("Inference runtime not initialized; skipping trade enqueue")
         return
@@ -96,7 +100,15 @@ async def enqueue_trade_for_inference(trade: dict) -> None:
     if symbol_meta["root"] not in _models:
         return
 
-    await _trade_queue.put(dict(trade))
+    try:
+        _trade_queue.put_nowait(dict(trade))
+    except asyncio.QueueFull:
+        _dropped_trade_inference += 1
+        if _dropped_trade_inference == 1 or _dropped_trade_inference % 100 == 0:
+            logger.warning(
+                "Inference queue full; dropped %s trades so far",
+                _dropped_trade_inference,
+            )
 
 
 async def _inference_worker(worker_id: int) -> None:
@@ -189,7 +201,7 @@ async def _resolve_underlying_price(root: str) -> float | None:
         "last": float(quote.get("last") or quote.get("close") or 0.0),
         "updated_at": datetime.now(UTC).isoformat(),
     }
-    await db.set_json(f"quote:{root}", normalized)
+    await db.set_json(f"quote:{root}", normalized, ex=UNDERLYING_QUOTE_TTL_SECONDS)
     return normalized["last"] or None
 
 
