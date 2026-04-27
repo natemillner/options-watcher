@@ -8,11 +8,14 @@ from src.tradier_stuff import get_quote, parse_occ_symbol
 logger = logging.getLogger(__name__)
 
 UNDERLYING_QUOTE_TTL_SECONDS = 20 * 60
+MIN_TRADE_SIZE_FOR_CHAIN_SNAPSHOT = 5
+UNDERLYING_REST_COOLDOWN_SECONDS = 5
 
 _snapshot_queue: asyncio.Queue[dict] | None = None
 _snapshot_workers: list[asyncio.Task] = []
 _latest_requested_minute: dict[str, datetime] = {}
 _runtime_initialized = False
+_underlying_rest_cache: dict[str, tuple[datetime, float | None]] = {}
 
 
 async def initialize_chain_snapshot_runtime(worker_count: int = 1) -> None:
@@ -30,6 +33,10 @@ async def initialize_chain_snapshot_runtime(worker_count: int = 1) -> None:
 
 async def enqueue_chain_snapshot_refresh(trade: dict) -> None:
     if _snapshot_queue is None:
+        return
+
+    trade_size = trade.get("size")
+    if trade_size is None or int(trade_size) < MIN_TRADE_SIZE_FOR_CHAIN_SNAPSHOT:
         return
 
     symbol = trade.get("symbol")
@@ -147,8 +154,16 @@ async def _resolve_underlying_price(root: str, option_quote: dict) -> float | No
     if cached_quote and cached_quote.get("last") is not None:
         return _as_float(cached_quote.get("last"))
 
+    now = datetime.now(UTC)
+    cached_fallback = _underlying_rest_cache.get(root)
+    if cached_fallback is not None:
+        cached_at, cached_price = cached_fallback
+        if (now - cached_at).total_seconds() < UNDERLYING_REST_COOLDOWN_SECONDS:
+            return cached_price
+
     root_quote = await asyncio.to_thread(get_quote, root, False)
     if root_quote is None:
+        _underlying_rest_cache[root] = (now, None)
         return None
 
     normalized = {
@@ -159,6 +174,7 @@ async def _resolve_underlying_price(root: str, option_quote: dict) -> float | No
         "updated_at": datetime.now(UTC).isoformat(),
     }
     await db.set_json(f"quote:{root}", normalized, ex=UNDERLYING_QUOTE_TTL_SECONDS)
+    _underlying_rest_cache[root] = (now, normalized["last"] or None)
     return normalized["last"] or None
 
 

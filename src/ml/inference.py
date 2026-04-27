@@ -39,6 +39,8 @@ ROLLING_WINDOW = timedelta(minutes=15)
 EVENT_GAP = timedelta(minutes=3)
 UNDERLYING_QUOTE_TTL_SECONDS = 20 * 60
 TRADE_QUEUE_MAXSIZE = 5000
+MIN_TRADE_SIZE_FOR_LIVE_INFERENCE = 5
+UNDERLYING_REST_COOLDOWN_SECONDS = 5
 
 _trade_queue: asyncio.Queue[dict] | None = None
 _worker_tasks: list[asyncio.Task] = []
@@ -48,6 +50,7 @@ _aggression_state: dict[str, deque[tuple[datetime, float, float]]] = defaultdict
 _pending_events: dict[tuple[str, str], dict] = {}
 _runtime_initialized = False
 _dropped_trade_inference = 0
+_underlying_rest_cache: dict[str, tuple[datetime, float | None]] = {}
 
 
 def _latest_model_path(root: str) -> Path | None:
@@ -89,6 +92,13 @@ async def enqueue_trade_for_inference(trade: dict) -> None:
     global _dropped_trade_inference
     if _trade_queue is None:
         logger.debug("Inference runtime not initialized; skipping trade enqueue")
+        return
+
+    trade_size = trade.get("size")
+    if trade_size is None or int(trade_size) < MIN_TRADE_SIZE_FOR_LIVE_INFERENCE:
+        return
+
+    if trade.get("trade_type") == "unknown":
         return
 
     try:
@@ -190,8 +200,16 @@ async def _resolve_underlying_price(root: str) -> float | None:
     if cached_quote and cached_quote.get("last"):
         return float(cached_quote["last"])
 
+    now = datetime.now(UTC)
+    cached_fallback = _underlying_rest_cache.get(root)
+    if cached_fallback is not None:
+        cached_at, cached_price = cached_fallback
+        if (now - cached_at).total_seconds() < UNDERLYING_REST_COOLDOWN_SECONDS:
+            return cached_price
+
     quote = await asyncio.to_thread(get_quote, root, False)
     if quote is None:
+        _underlying_rest_cache[root] = (now, None)
         return None
 
     normalized = {
@@ -202,6 +220,7 @@ async def _resolve_underlying_price(root: str) -> float | None:
         "updated_at": datetime.now(UTC).isoformat(),
     }
     await db.set_json(f"quote:{root}", normalized, ex=UNDERLYING_QUOTE_TTL_SECONDS)
+    _underlying_rest_cache[root] = (now, normalized["last"] or None)
     return normalized["last"] or None
 
 
